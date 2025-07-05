@@ -1,44 +1,43 @@
 package view;
 
-import controller.MonHocController;
-import model.MonHoc;
+import controller.NganhController;
+import model.Nganh;
 import util.FileExportUtil;
-import util.NumberUtil;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.util.List;
 
-public class MonHocView extends JFrame {
+public class NganhView extends JFrame {
     private JTable table;
     private DefaultTableModel tableModel;
-    private JTextField tfMaMon, tfTenMon, tfSoTC, tfSearch;
+    private JTextField tfMaNganh, tfTenNganh, tfTenKhoa, tfSearch;
 
-    public MonHocView() {
-        setTitle("Quản Lý Môn Học");
-        setSize(850, 550);
-        setDefaultCloseOperation(EXIT_ON_CLOSE);
+    public NganhView() {
+        setTitle("Quản Lý Ngành");
+        setSize(950, 600);
         setLocationRelativeTo(null);
+        setDefaultCloseOperation(EXIT_ON_CLOSE);
 
         // ===== Panel nhập liệu =====
         JPanel inputPanel = new JPanel(new GridLayout(3, 2, 10, 10));
-        inputPanel.setBorder(BorderFactory.createTitledBorder("Thông tin môn học"));
+        tfMaNganh = new JTextField();
+        tfTenNganh = new JTextField();
+        tfTenKhoa = new JTextField();
 
-        tfMaMon = new JTextField();
-        tfTenMon = new JTextField();
-        tfSoTC = new JTextField();
+        inputPanel.setBorder(BorderFactory.createTitledBorder("Thông tin ngành"));
 
-        inputPanel.add(new JLabel("Mã môn:")); inputPanel.add(tfMaMon);
-        inputPanel.add(new JLabel("Tên môn:")); inputPanel.add(tfTenMon);
-        inputPanel.add(new JLabel("Số tín chỉ:")); inputPanel.add(tfSoTC);
+        inputPanel.add(new JLabel("Mã ngành:")); inputPanel.add(tfMaNganh);
+        inputPanel.add(new JLabel("Tên ngành:")); inputPanel.add(tfTenNganh);
+        inputPanel.add(new JLabel("Tên khoa:")); inputPanel.add(tfTenKhoa);
 
-        // ===== Bảng dữ liệu =====
-        tableModel = new DefaultTableModel(new String[]{"STT", "Mã môn", "Tên môn", "Số TC"}, 0);
+        // ===== Table =====
+        tableModel = new DefaultTableModel(new String[]{"Mã ngành", "Tên ngành", "Tên khoa"}, 0);
         table = new JTable(tableModel);
         JScrollPane scrollPane = new JScrollPane(table);
 
-        // ===== Panel nút điều khiển =====
+        // ===== Panel nút bấm =====
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         JButton btnAdd = new JButton("Thêm");
         JButton btnUpdate = new JButton("Cập nhật");
@@ -52,69 +51,62 @@ public class MonHocView extends JFrame {
         buttonPanel.add(btnRefresh); buttonPanel.add(btnExport);
         buttonPanel.add(new JLabel("Tìm kiếm:")); buttonPanel.add(tfSearch); buttonPanel.add(btnSearch);
 
-        // ===== Layout chính =====
+        // ===== Main Panel chứa tất cả =====
         JPanel mainPanel = new JPanel();
         mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
         mainPanel.add(inputPanel);
         mainPanel.add(buttonPanel);
         mainPanel.add(scrollPane);
 
-        add(mainPanel);
-        loadTable(MonHocController.getAll());
+        add(new JScrollPane(mainPanel));  // Cho cuộn nếu cần
+
+        loadTable(NganhController.getAll());
 
         // ===== Sự kiện =====
         table.getSelectionModel().addListSelectionListener(e -> {
             int row = table.getSelectedRow();
             if (row >= 0) {
-                tfMaMon.setText(getSafe(row, 1));
-                tfTenMon.setText(getSafe(row, 2));
-                tfSoTC.setText(getSafe(row, 3));
+                tfMaNganh.setText(getValue(row, 0));
+                tfTenNganh.setText(getValue(row, 1));
+                tfTenKhoa.setText(getValue(row, 2));
             }
         });
 
         btnAdd.addActionListener(e -> {
-            if (!NumberUtil.isInteger(tfSoTC.getText())) {
-                JOptionPane.showMessageDialog(this, "Số tín chỉ phải là số nguyên!");
-                return;
-            }
-            MonHoc mh = getFromForm();
-            if (MonHocController.insert(mh)) {
+            Nganh ng = getFormData();
+            if (NganhController.insert(ng)) {
                 JOptionPane.showMessageDialog(this, "Thêm thành công!");
-                loadTable(MonHocController.getAll());
+                loadTable(NganhController.getAll());
             } else {
                 JOptionPane.showMessageDialog(this, "Thêm thất bại!");
             }
         });
 
         btnUpdate.addActionListener(e -> {
-            if (!NumberUtil.isInteger(tfSoTC.getText())) {
-                JOptionPane.showMessageDialog(this, "Số tín chỉ phải là số nguyên!");
-                return;
-            }
-            MonHoc mh = getFromForm();
-            if (MonHocController.update(mh)) {
+            Nganh ng = getFormData();
+            if (NganhController.update(ng)) {
                 JOptionPane.showMessageDialog(this, "Cập nhật thành công!");
-                loadTable(MonHocController.getAll());
+                loadTable(NganhController.getAll());
             } else {
                 JOptionPane.showMessageDialog(this, "Cập nhật thất bại!");
             }
         });
 
         btnDelete.addActionListener(e -> {
-            String ma = tfMaMon.getText().trim();
-            if (MonHocController.delete(ma)) {
+            String ma = tfMaNganh.getText();
+            if (NganhController.delete(ma)) {
                 JOptionPane.showMessageDialog(this, "Xóa thành công!");
-                loadTable(MonHocController.getAll());
+                loadTable(NganhController.getAll());
             } else {
                 JOptionPane.showMessageDialog(this, "Xóa thất bại!");
             }
         });
 
-        btnRefresh.addActionListener(e -> loadTable(MonHocController.getAll()));
+        btnRefresh.addActionListener(e -> loadTable(NganhController.getAll()));
 
         btnSearch.addActionListener(e -> {
-            String keyword = tfSearch.getText().trim();
-            loadTable(MonHocController.search(keyword));
+            String keyword = tfSearch.getText();
+            loadTable(NganhController.search(keyword));
         });
 
         btnExport.addActionListener(e -> {
@@ -128,36 +120,31 @@ public class MonHocView extends JFrame {
         });
     }
 
-    private void loadTable(List<MonHoc> list) {
+    private Nganh getFormData() {
+        return new Nganh(
+                tfMaNganh.getText().trim(),
+                tfTenNganh.getText().trim(),
+                tfTenKhoa.getText().trim()
+        );
+    }
+
+    private void loadTable(List<Nganh> list) {
         tableModel.setRowCount(0);
-        int stt = 1;
         if (list != null) {
-            for (MonHoc mh : list) {
+            for (Nganh ng : list) {
                 tableModel.addRow(new Object[]{
-                        stt++, safe(mh.getMaMon()), safe(mh.getTenMon()), mh.getSoTC()
+                        ng.getMaNganh(), ng.getTenNganh(), ng.getTenKhoa()
                 });
             }
         }
     }
 
-    private MonHoc getFromForm() {
-        return new MonHoc(
-                tfMaMon.getText().trim(),
-                tfTenMon.getText().trim(),
-                Integer.parseInt(tfSoTC.getText().trim())
-        );
-    }
-
-    private String safe(String s) {
-        return s == null ? "" : s;
-    }
-
-    private String getSafe(int row, int col) {
+    private String getValue(int row, int col) {
         Object val = tableModel.getValueAt(row, col);
         return val == null ? "" : val.toString();
     }
 
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> new MonHocView().setVisible(true));
+        SwingUtilities.invokeLater(() -> new NganhView().setVisible(true));
     }
 }

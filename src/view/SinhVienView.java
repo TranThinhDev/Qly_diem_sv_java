@@ -1,34 +1,41 @@
 package view;
 
+import controller.LopController;
 import controller.SinhVienController;
+import model.Lop;
 import model.SinhVien;
+import util.FileExportUtil;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class SinhVienView extends JFrame {
     private JTable table;
     private DefaultTableModel tableModel;
-    private JTextField tfMaSV, tfHoTen, tfMaLop, tfNgaySinh, tfGioiTinh, tfEmail, tfSDT, tfDiaChi, tfTrangThai, tfKhoaHoc, tfSearch;
+    private JTextField tfMaSV, tfHoTen, tfNgaySinh, tfEmail, tfSDT, tfDiaChi, tfTrangThai, tfKhoaHoc, tfTenLop, tfSearch;
+    private JComboBox<String> cbMaLop, cbGioiTinh;
+    private Map<String, String> maTenLopMap = new HashMap<>();
 
     public SinhVienView() {
         setTitle("Quản Lý Sinh Viên");
-        setSize(1000, 600);
+        setSize(1000, 650);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
-        setLayout(new BorderLayout());
 
-        JPanel inputPanel = new JPanel(new GridLayout(5, 4, 10, 5));
+        // ===== Panel nhập liệu =====
+        JPanel inputPanel = new JPanel(new GridLayout(6, 2, 10, 10));
+        inputPanel.setBorder(BorderFactory.createTitledBorder("Thông tin sinh viên"));
 
         tfMaSV = new JTextField();
         tfHoTen = new JTextField();
-        tfMaLop = new JTextField();
+        cbMaLop = new JComboBox<>();
+        tfTenLop = new JTextField(); tfTenLop.setEditable(false);
         tfNgaySinh = new JTextField();
-        tfGioiTinh = new JTextField();
+        cbGioiTinh = new JComboBox<>(new String[]{"Nam", "Nữ"});
         tfEmail = new JTextField();
         tfSDT = new JTextField();
         tfDiaChi = new JTextField();
@@ -37,46 +44,80 @@ public class SinhVienView extends JFrame {
 
         inputPanel.add(new JLabel("Mã SV:")); inputPanel.add(tfMaSV);
         inputPanel.add(new JLabel("Họ tên:")); inputPanel.add(tfHoTen);
-        inputPanel.add(new JLabel("Mã lớp:")); inputPanel.add(tfMaLop);
+        inputPanel.add(new JLabel("Mã lớp:")); inputPanel.add(cbMaLop);
+        inputPanel.add(new JLabel("Tên lớp:")); inputPanel.add(tfTenLop);
         inputPanel.add(new JLabel("Ngày sinh:")); inputPanel.add(tfNgaySinh);
-        inputPanel.add(new JLabel("Giới tính:")); inputPanel.add(tfGioiTinh);
+        inputPanel.add(new JLabel("Giới tính:")); inputPanel.add(cbGioiTinh);
         inputPanel.add(new JLabel("Email:")); inputPanel.add(tfEmail);
         inputPanel.add(new JLabel("SĐT:")); inputPanel.add(tfSDT);
         inputPanel.add(new JLabel("Địa chỉ:")); inputPanel.add(tfDiaChi);
         inputPanel.add(new JLabel("Trạng thái:")); inputPanel.add(tfTrangThai);
         inputPanel.add(new JLabel("Khóa học:")); inputPanel.add(tfKhoaHoc);
 
-        JPanel buttonPanel = new JPanel();
+        // ===== Load lớp vào combobox =====
+        List<Lop> dsLop = LopController.getAll();
+        for (Lop l : dsLop) {
+            cbMaLop.addItem(l.getMaLop());
+            maTenLopMap.put(l.getMaLop(), l.getTenLop());
+        }
+        cbMaLop.addActionListener(e -> {
+            String ma = (String) cbMaLop.getSelectedItem();
+            tfTenLop.setText(maTenLopMap.getOrDefault(ma, ""));
+        });
+        if (cbMaLop.getItemCount() > 0) cbMaLop.setSelectedIndex(0);
+
+        // ===== Table =====
+        tableModel = new DefaultTableModel(new String[]{
+            "STT", "Mã SV", "Họ tên", "Mã lớp", "Tên lớp", "Ngày sinh",
+            "Giới tính", "Email", "SĐT", "Địa chỉ", "Trạng thái", "Khóa học"
+        }, 0);
+        table = new JTable(tableModel);
+        JScrollPane scrollPane = new JScrollPane(table);
+
+        // ===== Panel nút =====
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         JButton btnAdd = new JButton("Thêm");
         JButton btnUpdate = new JButton("Cập nhật");
         JButton btnDelete = new JButton("Xóa");
         JButton btnRefresh = new JButton("Làm mới");
+        JButton btnExport = new JButton("Xuất CSV");
         tfSearch = new JTextField(15);
-        JButton btnSearch = new JButton("Tìm kiếm");
+        JButton btnSearch = new JButton("Tìm");
 
-        buttonPanel.add(btnAdd);
-        buttonPanel.add(btnUpdate);
-        buttonPanel.add(btnDelete);
-        buttonPanel.add(btnRefresh);
-        buttonPanel.add(new JLabel("Tìm:")); buttonPanel.add(tfSearch); buttonPanel.add(btnSearch);
+        buttonPanel.add(btnAdd); buttonPanel.add(btnUpdate); buttonPanel.add(btnDelete);
+        buttonPanel.add(btnRefresh); buttonPanel.add(btnExport);
+        buttonPanel.add(new JLabel("Tìm kiếm:")); buttonPanel.add(tfSearch); buttonPanel.add(btnSearch);
 
-        tableModel = new DefaultTableModel();
-        tableModel.setColumnIdentifiers(new String[]{
-                "Mã SV", "Họ tên", "Mã lớp", "Ngày sinh", "Giới tính",
-                "Email", "SĐT", "Địa chỉ", "Trạng thái", "Khóa học"
-        });
+        // ===== Main layout =====
+        JPanel mainPanel = new JPanel();
+        mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
+        mainPanel.add(inputPanel);
+        mainPanel.add(buttonPanel);
+        mainPanel.add(scrollPane);
 
-        table = new JTable(tableModel);
-        JScrollPane scrollPane = new JScrollPane(table);
-
-        add(inputPanel, BorderLayout.NORTH);
-        add(buttonPanel, BorderLayout.CENTER);
-        add(scrollPane, BorderLayout.SOUTH);
-
+        add(new JScrollPane(mainPanel));
         loadTable(SinhVienController.getAll());
 
+        // ===== Events =====
+        table.getSelectionModel().addListSelectionListener(e -> {
+            int row = table.getSelectedRow();
+            if (row >= 0) {
+                tfMaSV.setText(tableModel.getValueAt(row, 1).toString());
+                tfHoTen.setText(tableModel.getValueAt(row, 2).toString());
+                cbMaLop.setSelectedItem(tableModel.getValueAt(row, 3).toString());
+                tfTenLop.setText(tableModel.getValueAt(row, 4).toString());
+                tfNgaySinh.setText(tableModel.getValueAt(row, 5).toString());
+                cbGioiTinh.setSelectedItem(tableModel.getValueAt(row, 6).toString());
+                tfEmail.setText(tableModel.getValueAt(row, 7).toString());
+                tfSDT.setText(tableModel.getValueAt(row, 8).toString());
+                tfDiaChi.setText(tableModel.getValueAt(row, 9).toString());
+                tfTrangThai.setText(tableModel.getValueAt(row, 10).toString());
+                tfKhoaHoc.setText(tableModel.getValueAt(row, 11).toString());
+            }
+        });
+
         btnAdd.addActionListener(e -> {
-            SinhVien sv = getSinhVienFromForm();
+            SinhVien sv = getFormData();
             if (SinhVienController.insert(sv)) {
                 JOptionPane.showMessageDialog(this, "Thêm thành công!");
                 loadTable(SinhVienController.getAll());
@@ -86,7 +127,7 @@ public class SinhVienView extends JFrame {
         });
 
         btnUpdate.addActionListener(e -> {
-            SinhVien sv = getSinhVienFromForm();
+            SinhVien sv = getFormData();
             if (SinhVienController.update(sv)) {
                 JOptionPane.showMessageDialog(this, "Cập nhật thành công!");
                 loadTable(SinhVienController.getAll());
@@ -112,63 +153,63 @@ public class SinhVienView extends JFrame {
             loadTable(SinhVienController.search(keyword));
         });
 
-        table.getSelectionModel().addListSelectionListener(e -> {
-        int row = table.getSelectedRow();
-        if (row >= 0) {
-            try {
-                tfMaSV.setText(String.valueOf(tableModel.getValueAt(row, 0)));
-                tfHoTen.setText(String.valueOf(tableModel.getValueAt(row, 1)));
-                tfMaLop.setText(String.valueOf(tableModel.getValueAt(row, 2)));
-                tfNgaySinh.setText(String.valueOf(tableModel.getValueAt(row, 3)));
-                tfGioiTinh.setText(String.valueOf(tableModel.getValueAt(row, 4)));
-                tfEmail.setText(getSafeValueAt(row, 5));
-                tfSDT.setText(String.valueOf(tableModel.getValueAt(row, 6)));
-                tfDiaChi.setText(String.valueOf(tableModel.getValueAt(row, 7)));
-                tfTrangThai.setText(String.valueOf(tableModel.getValueAt(row, 8)));
-                tfKhoaHoc.setText(String.valueOf(tableModel.getValueAt(row, 9)));
-            } catch (Exception ex) {
-                ex.printStackTrace();
+        btnExport.addActionListener(e -> {
+            JFileChooser chooser = new JFileChooser();
+            int option = chooser.showSaveDialog(SinhVienView.this);
+            if (option == JFileChooser.APPROVE_OPTION) {
+                String path = chooser.getSelectedFile().getAbsolutePath();
+                FileExportUtil.exportTableToCSV(table, path);
+                JOptionPane.showMessageDialog(this, "Đã xuất file CSV!");
             }
-        }
-    });
-
-    }
-    private String getSafeValueAt(int row, int col) {
-        Object val = tableModel.getValueAt(row, col);
-        return val == null ? "" : val.toString();
+        });
     }
 
-
-    private void loadTable(List<SinhVien> list) {
-    tableModel.setRowCount(0);
-    if (list != null) {
-        for (SinhVien sv : list) {
-            String gioiTinh = sv.getGioiTinh().equalsIgnoreCase("1") ? "Nam" :
-                              sv.getGioiTinh().equalsIgnoreCase("0") ? "Nữ" :
-                              sv.getGioiTinh(); // fallback nếu đã là "Nam"/"Nữ"
-            tableModel.addRow(new Object[]{
-                    sv.getMaSV(), sv.getHoTen(), sv.getMaLop(), sv.getNgaySinh(), gioiTinh,
-                    sv.getEmail(), sv.getSdt(), sv.getDiaChi(), sv.getTrangThai(), sv.getKhoaHoc()
-            });
-        }
-    }
-}
-
-
-    private SinhVien getSinhVienFromForm() {
+    private SinhVien getFormData() {
         return new SinhVien(
-                tfMaSV.getText(),
-                tfHoTen.getText(),
-                tfMaLop.getText(),
-                tfNgaySinh.getText(),
-                tfGioiTinh.getText(),
-                tfEmail.getText(),
-                tfSDT.getText(),
-                tfDiaChi.getText(),
-                tfTrangThai.getText(),
-                tfKhoaHoc.getText()
+                tfMaSV.getText().trim(),
+                tfHoTen.getText().trim(),
+                (String) cbMaLop.getSelectedItem(),
+                tfNgaySinh.getText().trim(),
+                (String) cbGioiTinh.getSelectedItem(),
+                tfEmail.getText().trim(),
+                tfSDT.getText().trim(),
+                tfDiaChi.getText().trim(),
+                tfTrangThai.getText().trim(),
+                tfKhoaHoc.getText().trim()
         );
     }
+
+    private void loadTable(List<SinhVien> list) {
+        tableModel.setRowCount(0);
+        int stt = 1;
+        if (list != null) {
+            for (SinhVien sv : list) {
+                String maSV = sv.getMaSV() != null ? sv.getMaSV() : "";
+                String hoTen = sv.getHoTen() != null ? sv.getHoTen() : "";
+                String maLop = sv.getMaLop() != null ? sv.getMaLop() : "";
+                String tenLop = maTenLopMap.getOrDefault(maLop, "");
+                String ngaySinh = sv.getNgaySinh() != null ? sv.getNgaySinh() : "";
+                String gioiTinhCode = sv.getGioiTinh();
+                String gioiTinh = "Nữ"; // mặc định
+                if ("1".equals(gioiTinhCode)) gioiTinh = "Nam";
+                else if ("0".equals(gioiTinhCode)) gioiTinh = "Nữ";
+                else if (gioiTinhCode == null || gioiTinhCode.isEmpty()) gioiTinh = "";
+
+                String email = sv.getEmail() != null ? sv.getEmail() : "";
+                String sdt = sv.getSdt() != null ? sv.getSdt() : "";
+                String diaChi = sv.getDiaChi() != null ? sv.getDiaChi() : "";
+                String trangThai = sv.getTrangThai() != null ? sv.getTrangThai() : "";
+                String khoaHoc = sv.getKhoaHoc() != null ? sv.getKhoaHoc() : "";
+
+                tableModel.addRow(new Object[]{
+                        stt++, maSV, hoTen, maLop, tenLop,
+                        ngaySinh, gioiTinh, email, sdt, diaChi, trangThai, khoaHoc
+                });
+            }
+        }
+    }
+
+
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> new SinhVienView().setVisible(true));

@@ -2,138 +2,172 @@ package view;
 
 import controller.GiangVienController;
 import model.GiangVien;
+import util.FileExportUtil;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
-import java.awt.event.*;
 import java.util.List;
 
 public class GiangVienView extends JFrame {
-    private JTextField txtMa, txtTen, txtEmail, txtDiaChi, txtSDT, txtThanhTich, txtKhenThuong, txtSearch;
     private JTable table;
-    private DefaultTableModel model;
+    private DefaultTableModel tableModel;
+    private JTextField tfMaGV, tfHoTen, tfEmail, tfDiaChi, tfSDT, tfThanhTich, tfKhenThuong, tfSearch;
 
     public GiangVienView() {
-        setTitle("Quản lý giảng viên");
-        setSize(800, 600);
+        setTitle("Quản Lý Giảng Viên");
+        setSize(950, 600);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
-        setLayout(new BorderLayout());
 
-        // Form input
-        JPanel form = new JPanel(new GridLayout(7, 2));
-        txtMa = new JTextField();
-        txtTen = new JTextField();
-        txtEmail = new JTextField();
-        txtDiaChi = new JTextField();
-        txtSDT = new JTextField();
-        txtThanhTich = new JTextField();
-        txtKhenThuong = new JTextField();
-        form.add(new JLabel("Mã GV:")); form.add(txtMa);
-        form.add(new JLabel("Họ tên:")); form.add(txtTen);
-        form.add(new JLabel("Email:")); form.add(txtEmail);
-        form.add(new JLabel("Địa chỉ:")); form.add(txtDiaChi);
-        form.add(new JLabel("SĐT:")); form.add(txtSDT);
-        form.add(new JLabel("Thành tích:")); form.add(txtThanhTich);
-        form.add(new JLabel("Khen thưởng:")); form.add(txtKhenThuong);
+        // ===== Panel nhập liệu =====
+        JPanel inputPanel = new JPanel(new GridLayout(4, 2, 10, 10));
+        inputPanel.setBorder(BorderFactory.createTitledBorder("Thông tin giảng viên"));
 
-        add(form, BorderLayout.NORTH);
+        tfMaGV = new JTextField();
+        tfHoTen = new JTextField();
+        tfEmail = new JTextField();
+        tfDiaChi = new JTextField();
+        tfSDT = new JTextField();
+        tfThanhTich = new JTextField();
+        tfKhenThuong = new JTextField();
 
-        // Table
-        model = new DefaultTableModel(new String[]{"Mã", "Tên", "Email", "Địa chỉ", "SĐT", "Thành tích", "Khen thưởng"}, 0);
-        table = new JTable(model);
-        add(new JScrollPane(table), BorderLayout.CENTER);
+        inputPanel.add(new JLabel("Mã GV:")); inputPanel.add(tfMaGV);
+        inputPanel.add(new JLabel("Họ tên:")); inputPanel.add(tfHoTen);
+        inputPanel.add(new JLabel("Email:")); inputPanel.add(tfEmail);
+        inputPanel.add(new JLabel("Địa chỉ:")); inputPanel.add(tfDiaChi);
+        inputPanel.add(new JLabel("SĐT:")); inputPanel.add(tfSDT);
+        inputPanel.add(new JLabel("Thành tích:")); inputPanel.add(tfThanhTich);
+        inputPanel.add(new JLabel("Khen thưởng:")); inputPanel.add(tfKhenThuong);
 
-        // Control
-        JPanel control = new JPanel();
+        // ===== Table =====
+        tableModel = new DefaultTableModel(new String[]{
+                "STT", "Mã GV", "Họ tên", "Email", "Địa chỉ", "SĐT", "Thành tích", "Khen thưởng"
+        }, 0);
+        table = new JTable(tableModel);
+        JScrollPane scrollPane = new JScrollPane(table);
+
+        // ===== Panel nút bấm =====
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         JButton btnAdd = new JButton("Thêm");
-        JButton btnUpdate = new JButton("Sửa");
-        JButton btnDelete = new JButton("Xoá");
-        txtSearch = new JTextField(10);
+        JButton btnUpdate = new JButton("Cập nhật");
+        JButton btnDelete = new JButton("Xóa");
+        JButton btnRefresh = new JButton("Làm mới");
+        JButton btnExport = new JButton("Xuất CSV");
+        tfSearch = new JTextField(15);
         JButton btnSearch = new JButton("Tìm");
 
-        control.add(btnAdd); control.add(btnUpdate); control.add(btnDelete);
-        control.add(txtSearch); control.add(btnSearch);
-        add(control, BorderLayout.SOUTH);
+        buttonPanel.add(btnAdd); buttonPanel.add(btnUpdate); buttonPanel.add(btnDelete);
+        buttonPanel.add(btnRefresh); buttonPanel.add(btnExport);
+        buttonPanel.add(new JLabel("Tìm kiếm:")); buttonPanel.add(tfSearch); buttonPanel.add(btnSearch);
 
-        // Events
+        // ===== Main layout =====
+        JPanel mainPanel = new JPanel();
+        mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
+        mainPanel.add(inputPanel);
+        mainPanel.add(buttonPanel);
+        mainPanel.add(scrollPane);
+
+        add(new JScrollPane(mainPanel));
+        loadTable(GiangVienController.getAll());
+
+        // ===== Sự kiện =====
+        table.getSelectionModel().addListSelectionListener(e -> {
+            int row = table.getSelectedRow();
+            if (row >= 0) {
+                tfMaGV.setText(getSafe(row, 1));
+                tfHoTen.setText(getSafe(row, 2));
+                tfEmail.setText(getSafe(row, 3));
+                tfDiaChi.setText(getSafe(row, 4));
+                tfSDT.setText(getSafe(row, 5));
+                tfThanhTich.setText(getSafe(row, 6));
+                tfKhenThuong.setText(getSafe(row, 7));
+            }
+        });
+
         btnAdd.addActionListener(e -> {
-            GiangVien gv = getInput();
+            GiangVien gv = getFormData();
             if (GiangVienController.add(gv)) {
-                JOptionPane.showMessageDialog(this, "Đã thêm!");
-                loadTable();
+                JOptionPane.showMessageDialog(this, "Thêm thành công!");
+                loadTable(GiangVienController.getAll());
+            } else {
+                JOptionPane.showMessageDialog(this, "Thêm thất bại!");
             }
         });
 
         btnUpdate.addActionListener(e -> {
-            GiangVien gv = getInput();
+            GiangVien gv = getFormData();
             if (GiangVienController.update(gv)) {
-                JOptionPane.showMessageDialog(this, "Đã cập nhật!");
-                loadTable();
+                JOptionPane.showMessageDialog(this, "Cập nhật thành công!");
+                loadTable(GiangVienController.getAll());
+            } else {
+                JOptionPane.showMessageDialog(this, "Cập nhật thất bại!");
             }
         });
 
         btnDelete.addActionListener(e -> {
-            String ma = txtMa.getText();
+            String ma = tfMaGV.getText().trim();
             if (GiangVienController.delete(ma)) {
-                JOptionPane.showMessageDialog(this, "Đã xoá!");
-                loadTable();
+                JOptionPane.showMessageDialog(this, "Xóa thành công!");
+                loadTable(GiangVienController.getAll());
+            } else {
+                JOptionPane.showMessageDialog(this, "Xóa thất bại!");
             }
         });
+
+        btnRefresh.addActionListener(e -> loadTable(GiangVienController.getAll()));
 
         btnSearch.addActionListener(e -> {
-            String keyword = txtSearch.getText();
-            loadTable(keyword);
+            String keyword = tfSearch.getText().trim();
+            loadTable(GiangVienController.search(keyword));
         });
 
-        table.addMouseListener(new MouseAdapter() {
-            public void mouseClicked(MouseEvent e) {
-                int row = table.getSelectedRow();
-                txtMa.setText(model.getValueAt(row, 0).toString());
-                txtTen.setText(model.getValueAt(row, 1).toString());
-                txtEmail.setText(model.getValueAt(row, 2).toString());
-                txtDiaChi.setText(model.getValueAt(row, 3).toString());
-                txtSDT.setText(model.getValueAt(row, 4).toString());
-                txtThanhTich.setText(model.getValueAt(row, 5).toString());
-                txtKhenThuong.setText(model.getValueAt(row, 6).toString());
+        btnExport.addActionListener(e -> {
+            JFileChooser chooser = new JFileChooser();
+            int option = chooser.showSaveDialog(this);
+            if (option == JFileChooser.APPROVE_OPTION) {
+                String path = chooser.getSelectedFile().getAbsolutePath();
+                FileExportUtil.exportTableToCSV(table, path);
+                JOptionPane.showMessageDialog(this, "Đã xuất file CSV!");
             }
         });
-
-        loadTable();
-        setVisible(true);
     }
 
-    private void loadTable() {
-        loadTable(null);
-    }
-
-    private void loadTable(String keyword) {
-        model.setRowCount(0);
-        List<GiangVien> list = keyword == null || keyword.isEmpty()
-                ? GiangVienController.getAll()
-                : GiangVienController.search(keyword);
-        for (GiangVien gv : list) {
-            model.addRow(new Object[]{
-                gv.getMaGV(), gv.getHoTen(), gv.getEmail(), gv.getDiaChi(),
-                gv.getSdt(), gv.getThanhTich(), gv.getKhenThuong()
-            });
+    private void loadTable(List<GiangVien> list) {
+        tableModel.setRowCount(0);
+        int stt = 1;
+        if (list != null) {
+            for (GiangVien gv : list) {
+                tableModel.addRow(new Object[]{
+                        stt++, safe(gv.getMaGV()), safe(gv.getHoTen()), safe(gv.getEmail()),
+                        safe(gv.getDiaChi()), safe(gv.getSdt()), safe(gv.getThanhTich()), safe(gv.getKhenThuong())
+                });
+            }
         }
     }
 
-    private GiangVien getInput() {
+    private GiangVien getFormData() {
         return new GiangVien(
-            txtMa.getText(),
-            txtTen.getText(),
-            txtDiaChi.getText(),
-            txtEmail.getText(),
-            txtSDT.getText(),
-            txtThanhTich.getText(),
-            txtKhenThuong.getText()
+                tfMaGV.getText().trim(),
+                tfHoTen.getText().trim(),
+                tfDiaChi.getText().trim(),
+                tfEmail.getText().trim(),
+                tfSDT.getText().trim(),
+                tfThanhTich.getText().trim(),
+                tfKhenThuong.getText().trim()
         );
     }
 
+    private String safe(String s) {
+        return s == null ? "" : s;
+    }
+
+    private String getSafe(int row, int col) {
+        Object val = tableModel.getValueAt(row, col);
+        return val == null ? "" : val.toString();
+    }
+
     public static void main(String[] args) {
-        new GiangVienView();
+        SwingUtilities.invokeLater(() -> new GiangVienView().setVisible(true));
     }
 }

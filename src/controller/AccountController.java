@@ -11,11 +11,17 @@ import java.util.List;
 public class AccountController {
     private static final String BASE_URL = "http://localhost:8080/MyWebApp/api/account";
 
-    public static List<TaiKhoan> getAll() throws Exception {
+    public static List<TaiKhoan> getAll() {
+    try {
         String json = HttpUtil.sendRequest(BASE_URL, "GET", null);
-        Type type = new TypeToken<List<TaiKhoan>>(){}.getType();
+        Type type = new TypeToken<List<TaiKhoan>>() {}.getType();
         return new Gson().fromJson(json, type);
+    } catch (Exception e) {
+        e.printStackTrace();
+        return java.util.Collections.emptyList();
     }
+}
+
 
     public static TaiKhoan getByUsername(String tenDN) throws Exception {
         String json = HttpUtil.sendRequest(BASE_URL + "?id=" + tenDN, "GET", null);
@@ -52,5 +58,9 @@ public class AccountController {
             e.printStackTrace();
             return false;
         }
+    }
+
+    public static List<TaiKhoan> search(String keyword) {
+        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
     }
 }

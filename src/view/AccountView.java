@@ -7,93 +7,150 @@ import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class AccountView extends JFrame {
     private JTable table;
-    private JTextField txtUser = new JTextField(10);
-    private JTextField txtPass = new JTextField(10);
-    private JTextField txtName = new JTextField(15);
-    private JTextField txtRole = new JTextField(10);
-    private DefaultTableModel model;
+    private DefaultTableModel tableModel;
+    private JTextField tfTenDN, tfMatKhau, tfHoTen, tfSearch;
+    private JComboBox<String> cbQuyen;
 
     public AccountView() {
-        setTitle("Quản lý tài khoản");
-        setLayout(new BorderLayout());
+        setTitle("Quản Lý Tài Khoản");
+        setSize(900, 600);
+        setLocationRelativeTo(null);
+        setDefaultCloseOperation(EXIT_ON_CLOSE);
 
-        model = new DefaultTableModel(new Object[]{"Tên đăng nhập", "Mật khẩu", "Họ tên", "Quyền"}, 0);
-        table = new JTable(model);
-        JScrollPane scroll = new JScrollPane(table);
-        add(scroll, BorderLayout.CENTER);
+        // ===== Panel nhập liệu =====
+        JPanel inputPanel = new JPanel(new GridLayout(4, 2, 10, 10));
+        inputPanel.setBorder(BorderFactory.createTitledBorder("Thông tin tài khoản"));
 
-        JPanel form = new JPanel();
-        form.add(new JLabel("Tên ĐN:")); form.add(txtUser);
-        form.add(new JLabel("Mật khẩu:")); form.add(txtPass);
-        form.add(new JLabel("Họ tên:")); form.add(txtName);
-        form.add(new JLabel("Quyền:")); form.add(txtRole);
-        add(form, BorderLayout.NORTH);
+        tfTenDN = new JTextField();
+        tfMatKhau = new JTextField();
+        tfHoTen = new JTextField();
+        cbQuyen = new JComboBox<>(new String[]{"sinhvie", "giangvie", "quanly"});
 
-        JPanel btns = new JPanel();
-        JButton btnLoad = new JButton("Tải lại");
+        inputPanel.add(new JLabel("Tên đăng nhập:")); inputPanel.add(tfTenDN);
+        inputPanel.add(new JLabel("Mật khẩu:")); inputPanel.add(tfMatKhau);
+        inputPanel.add(new JLabel("Họ tên:")); inputPanel.add(tfHoTen);
+        inputPanel.add(new JLabel("Quyền:")); inputPanel.add(cbQuyen);
+
+        // ===== Table =====
+        tableModel = new DefaultTableModel(new String[]{"STT", "Tên đăng nhập", "Mật khẩu", "Họ tên", "Quyền"}, 0);
+        table = new JTable(tableModel);
+        JScrollPane scrollPane = new JScrollPane(table);
+
+        // ===== Panel nút bấm =====
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         JButton btnAdd = new JButton("Thêm");
-        JButton btnUpdate = new JButton("Sửa");
-        JButton btnDelete = new JButton("Xoá");
+        JButton btnUpdate = new JButton("Cập nhật");
+        JButton btnDelete = new JButton("Xóa");
+        JButton btnRefresh = new JButton("Làm mới");
+        tfSearch = new JTextField(15);
+        JButton btnSearch = new JButton("Tìm");
 
-        btns.add(btnLoad); btns.add(btnAdd); btns.add(btnUpdate); btns.add(btnDelete);
-        add(btns, BorderLayout.SOUTH);
+        buttonPanel.add(btnAdd); buttonPanel.add(btnUpdate); buttonPanel.add(btnDelete);
+        buttonPanel.add(btnRefresh);
+        buttonPanel.add(new JLabel("Tìm kiếm:")); buttonPanel.add(tfSearch); buttonPanel.add(btnSearch);
 
-        btnLoad.addActionListener(e -> loadData());
-        btnAdd.addActionListener(e -> insert());
-        btnUpdate.addActionListener(e -> update());
-        btnDelete.addActionListener(e -> delete());
+        // ===== Main Panel =====
+        JPanel mainPanel = new JPanel();
+        mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
+        mainPanel.add(inputPanel);
+        mainPanel.add(buttonPanel);
+        mainPanel.add(scrollPane);
 
+        add(new JScrollPane(mainPanel));
+        loadTable(AccountController.getAll());
+
+        // ===== Sự kiện =====
         table.getSelectionModel().addListSelectionListener(e -> {
-            int i = table.getSelectedRow();
-            if (i >= 0) {
-                txtUser.setText(model.getValueAt(i, 0).toString());
-                txtPass.setText(model.getValueAt(i, 1).toString());
-                txtName.setText(model.getValueAt(i, 2).toString());
-                txtRole.setText(model.getValueAt(i, 3).toString());
+            int row = table.getSelectedRow();
+            if (row >= 0) {
+                tfTenDN.setText(getValue(row, 1));
+                tfMatKhau.setText(getValue(row, 2));
+                tfHoTen.setText(getValue(row, 3));
+                cbQuyen.setSelectedItem(getValue(row, 4));
             }
         });
 
-        setSize(600, 400);
-        setLocationRelativeTo(null);
-        setVisible(true);
+        btnAdd.addActionListener(e -> {
+            TaiKhoan tk = getFormData();
+            if (AccountController.insert(tk)) {
+                JOptionPane.showMessageDialog(this, "Thêm thành công!");
+                loadTable(AccountController.getAll());
+            } else {
+                JOptionPane.showMessageDialog(this, "Thêm thất bại!");
+            }
+        });
 
-        loadData();
+        btnUpdate.addActionListener(e -> {
+            TaiKhoan tk = getFormData();
+            if (AccountController.update(tk)) {
+                JOptionPane.showMessageDialog(this, "Cập nhật thành công!");
+                loadTable(AccountController.getAll());
+            } else {
+                JOptionPane.showMessageDialog(this, "Cập nhật thất bại!");
+            }
+        });
+
+        btnDelete.addActionListener(e -> {
+            String ten = tfTenDN.getText();
+            if (AccountController.delete(ten)) {
+                JOptionPane.showMessageDialog(this, "Xóa thành công!");
+                try {
+                    loadTable(AccountController.getAll());
+                } catch (Exception ex) {
+                    Logger.getLogger(AccountView.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            } else {
+                JOptionPane.showMessageDialog(this, "Xóa thất bại!");
+            }
+        });
+
+        btnRefresh.addActionListener(e -> {
+            try {
+                loadTable(AccountController.getAll());
+            } catch (Exception ex) {
+                Logger.getLogger(AccountView.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        });
+
+        btnSearch.addActionListener(e -> {
+            String keyword = tfSearch.getText().trim();
+            List<TaiKhoan> result = AccountController.search(keyword); // cần có hàm search
+            loadTable(result);
+        });
     }
 
-    private void loadData() {
-        try {
-            List<TaiKhoan> list = AccountController.getAll();
-            model.setRowCount(0);
+    private void loadTable(List<TaiKhoan> list) {
+        tableModel.setRowCount(0);
+        int stt = 1;
+        if (list != null) {
             for (TaiKhoan tk : list) {
-                model.addRow(new Object[]{tk.getTenDN(), tk.getMatKhau(), tk.getHoTen(), tk.getQuyen()});
+                tableModel.addRow(new Object[]{
+                        stt++, tk.getTenDN(), tk.getMatKhau(), tk.getHoTen(), tk.getQuyen()
+                });
             }
-        } catch (Exception e) {
-            e.printStackTrace();
         }
     }
 
-    private void insert() {
-        TaiKhoan tk = new TaiKhoan(txtUser.getText(), txtPass.getText(), txtName.getText(), txtRole.getText());
-        boolean ok = AccountController.insert(tk);
-        if (ok) loadData();
+    private TaiKhoan getFormData() {
+        return new TaiKhoan(
+                tfTenDN.getText().trim(),
+                tfMatKhau.getText().trim(),
+                tfHoTen.getText().trim(),
+                (String) cbQuyen.getSelectedItem()
+        );
     }
 
-    private void update() {
-        TaiKhoan tk = new TaiKhoan(txtUser.getText(), txtPass.getText(), txtName.getText(), txtRole.getText());
-        boolean ok = AccountController.update(tk);
-        if (ok) loadData();
-    }
-
-    private void delete() {
-        String tenDN = txtUser.getText();
-        boolean ok = AccountController.delete(tenDN);
-        if (ok) loadData();
+    private String getValue(int row, int col) {
+        Object val = tableModel.getValueAt(row, col);
+        return val == null ? "" : val.toString();
     }
 
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(AccountView::new);
+        SwingUtilities.invokeLater(() -> new AccountView().setVisible(true));
     }
 }
