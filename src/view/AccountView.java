@@ -29,7 +29,7 @@ public class AccountView extends JFrame {
         tfTenDN = new JTextField();
         tfMatKhau = new JTextField();
         tfHoTen = new JTextField();
-        cbQuyen = new JComboBox<>(new String[]{"sinhvie", "giangvie", "quanly"});
+        cbQuyen = new JComboBox<>(new String[]{"Sinhvie", "Giangvie", "Quanly"});
 
         inputPanel.add(new JLabel("Tên đăng nhập:")); inputPanel.add(tfTenDN);
         inputPanel.add(new JLabel("Mật khẩu:")); inputPanel.add(tfMatKhau);

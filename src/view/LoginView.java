@@ -6,6 +6,7 @@ package view;
 
 import controller.LoginController;
 import model.TaiKhoan;
+import util.Session;
 
 import javax.swing.*;
 import java.awt.*;
@@ -42,6 +43,7 @@ public class LoginView extends JFrame {
 
         TaiKhoan tk = LoginController.login(username, password);
         if (tk != null) {
+            Session.setLoggedInUser(tk);
             JOptionPane.showMessageDialog(this, "✅ Đăng nhập thành công với quyền: " + tk.getQuyen());
 
             dispose(); // đóng màn hình login
@@ -49,11 +51,11 @@ public class LoginView extends JFrame {
             // Mở màn hình tương ứng
             switch (tk.getQuyen().toLowerCase()) {
                 case "quanly":
-                    new AdminView(tk); break;
-//                case "giangvie":
-//                    new GiangVienView(tk); break;
-//                case "sinhvie":
-//                    new SinhVienView(tk); break;
+                    new HomePage().setVisible(true); break;// đúng
+                case "giangvie":
+                    new GiangVienHomePage(); break;
+                case "sinhvie":
+                    new SinhVienHomePage(); break;
                 default:
                     JOptionPane.showMessageDialog(this, "❌ Quyền không hợp lệ.");
             }
